@@ -1,31 +1,31 @@
 package dao;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Scanner;
 
 import dto.StudentDto;
+import file.FileIO;
 
 // Data Access Object: 데이터를 취급하는 클래스
 public class StudentDao {
 	// 학생 데이터 관리 배열
 	private StudentDto student[];
 	private int count;
+	private FileIO fio;
 	
 	// 추가, 삭제, 검색, 수정 (CRUD)
 	public StudentDao() { // 생성자는 딱 한 번 호출됨
+		fio = new FileIO("student");
+		fio.create();
+		
 		count = 0;
 		
 		student = new StudentDto[10]; // 변수만 생성
 		// StudentDto student1, student2, student3 ... ;
 		
 		// dto를 생성
+//		for (int i = 0; i < student.length; i++) {
+//		student[i] = new StudentDto();
+//		}
 	}
 	
 	public void insert() {
@@ -93,6 +93,7 @@ public class StudentDao {
 //		student[index].setKor(0);
 //		student[index].setEng(0);
 //		student[index].setMath(0);
+		
 		System.out.println(target+"의 정보를 삭제합니다.");
 	}
 	
@@ -101,15 +102,15 @@ public class StudentDao {
 		Scanner sc = new Scanner(System.in);
 		String target = sc.next();
 		
-		int index = findTarget(target);
-		
-		if(index == -1) {
-			System.out.println("학생정보를 찾을 수 없습니다");
-			return;
-		} 
-		
-		System.out.println(target+"의 정보입니다.");
-		System.out.println(student[index].toString());
+		for (int i = 0; i < student.length; i++) {
+			StudentDto dto = student[i];
+			if(dto != null && dto.getName().equals("") == false) {
+				if(target.equals(dto.getName())) {
+					System.out.println(target+"의 정보입니다.");
+					dto.print();
+				}
+			}
+		}
 	}
 	
 	public void update() {
@@ -138,7 +139,7 @@ public class StudentDao {
 		student[index].setMath(math);
 		
 		System.out.println(student[index].toString());
-		System.out.println("수정이 완료되었습니다");
+		System.out.println("성공적으로 수정이 완료되었습니다");
 	}
 	
 	public void allData() {
@@ -150,58 +151,57 @@ public class StudentDao {
 		}
 	}
 	
+	// 파일 저장
 	public void save() {
-		File file = new File("c:\\tmp\\students1122.txt");
-
-		try {
-			if (file.createNewFile()) {
-				System.out.println("파일 생성 성공!");
-			} else {
-				System.out.println("파일 생성 실패");
+		// 실제로 삭제된 데이터를 제외한 (정상적인) 데이터가 몇 개?
+		int ci = 0;
+		for (int i = 0; i < student.length; i++) {
+			if (student[i] != null && student[i].getName().equals("") == false) {
+				ci++;
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
-
-		try {
-			FileWriter fw = new FileWriter(file, true);
-			BufferedWriter bw = new BufferedWriter(fw);
-			PrintWriter pw = new PrintWriter(bw);
-			
-			for (int i = 0; i < student.length; i++) {
-				StudentDto dto = student[i];
-				if(dto != null && !(dto.getName().equals(""))) {
-					pw.write(dto.toString());
-				}
+		
+		// 배열
+		String arr[] = new String[ci];
+		int j = 0;
+		for (int i = 0; i < student.length; i++) {
+			if (student[i] != null && student[i].getName().equals("") == false) {
+				arr[j] = student[i].toString();
+				j++;
 			}
-			System.out.println("파일을 저장하였습니다.");
-			pw.close();
-			
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
+		
+		fio.dataSave(arr);
 	}
 	
+	// 파일 읽기
 	public void load() {
-		try {
-			File file = new File("c:\\tmp\\students1122.txt");
-			
-			FileReader fr = new FileReader(file);
-			BufferedReader br = new BufferedReader(fr);
-			
-			System.out.println("파일을 읽습니다...");
-			String str = "";
-			
-			while ((str = br.readLine()) != null) {
-				System.out.println(str);
-			}
-			
-			br.close();
-			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+		String arr[] = fio.dataLoad();
+		
+		// 읽을 데이터가 없을 때
+		if (arr == null || arr.length == 0) {
+			count = 0; // 데이터가 없으니 데이터를 처음부터 넣어야하여 초기화함
+			return;
 		}
+		
+		count = arr.length;
+		
+		// string -> student[]
+		for (int i = 0; i < arr.length; i++) {
+			// 문자열 자르기
+			String split[] = arr[i].split("-");
+			
+			// 자른 문자열을 dto에 저장하기 위한 처리
+			String name = split[0];
+			int age = Integer.parseInt(split[1]);
+			double height = Double.parseDouble(split[2]);
+			String address = split[3];
+			int kor = Integer.parseInt(split[4]);
+			int eng = Integer.parseInt(split[5]);
+			int math = Integer.parseInt(split[6]);
+			
+			student[i] = new StudentDto(name, age, height, address, kor, eng, math);
+		}
+		System.out.println("데이터로드 성공!");
 	}
 }
