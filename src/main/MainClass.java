@@ -3,6 +3,7 @@ package main;
 import java.util.Scanner;
 
 import dao.StudentDao;
+import dao.StudentDaoInter;
 
 public class MainClass {
 
@@ -10,7 +11,7 @@ public class MainClass {
 		Scanner sc = new Scanner(System.in);
 		
 		// menu
-		StudentDao dao = new StudentDao();
+		StudentDaoInter dao = new StudentDao();
 		
 //		int count = 0;
 
